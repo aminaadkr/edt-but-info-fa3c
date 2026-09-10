@@ -1,0 +1,31 @@
+name: Mise à jour de l'emploi du temps
+
+on:
+  schedule:
+    - cron: "0 5,15 * * *"   # 7h et 17h (heure de Paris, été)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: edt
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Générer le calendrier
+        run: python formadep_ics.py --out docs/fa3c.ics
+      - name: Publier
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/fa3c.ics
+          git diff --cached --quiet || git commit -m "Mise à jour de l'emploi du temps"
+          git push
